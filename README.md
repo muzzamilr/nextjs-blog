@@ -53,6 +53,17 @@ export const authSlice = createSlice({
     setUser: (state, { payload }) => {
       state.user = payload.user;
     },
+    deAuthenticate: (state) => {
+      state.isLoggedIn = false
+    },
+    authenticate: (state, { payload }) => {
+      state.isLoggedIn = true,
+      state.user = payload
+    },
+    restoreAuthState: (state, { payload }) => {
+      state.isLoggedIn = true
+      state.user = payload
+    }
   },
 });
 
@@ -62,3 +73,30 @@ export default authSlice.reducer;
 ```
 
 Now we need to create a file called action-creators.js in auth directory,
+
+
+Now, we need to configure our store and create a file named store.js in store directory,
+```ts
+import auth from "./auth/auth-slice";
+
+const store = configureStore({
+  reducer: auth,
+});
+
+export default store;
+```
+
+In _app.js file add the following code,
+```ts
+import '../styles/globals.css'
+import { Provider } from "react-redux";
+import store from "../store/store";
+
+export default function App({ Component, pageProps }) {
+  return (
+  <Provider store={store} >
+    <Component {...pageProps} />
+  <Provider />
+  )
+}
+```
