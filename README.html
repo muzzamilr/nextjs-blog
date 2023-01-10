@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>README.html</title>
+<meta http-equiv="Content-Type" content="application/xhtml+xml;charset=utf-8"/>
+<link rel="stylesheet" type="text/css" media="all" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css"  />
+<link rel="stylesheet" type="text/css" media="all" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/github.min.css"  /><meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'><style> body { box-sizing: border-box; max-width: 740px; width: 100%; margin: 40px auto; padding: 0 10px; } </style><script id='MathJax-script' async src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'></script><script src='https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js'></script><script>document.addEventListener('DOMContentLoaded', () => { document.body.classList.add('markdown-body'); document.querySelectorAll('pre[lang] > code').forEach((code) => { code.classList.add(code.parentElement.lang); }); document.querySelectorAll('pre > code').forEach((code) => { hljs.highlightBlock(code); }); });</script>
+</head>
+
+<body>
+
+<p>In this article, we will discuss how we integrate Redux store with our next js app by covering simple JWT auth and we will do all that without compromising on SSR.</p>
+<p>Disclaimer: This is strictly a hands-on guide targeted towards developers with an advanced skill set in next js.</p>
+<p>Following concepts will be covered.</p>
+<ul>
+<li>How to structure domain logic in Redux.</li>
+<li>Integrating Redux store with next js.</li>
+<li>Rebuilding state on page changes.</li>
+<li>Persisting state in cookies without sacrificing SSR.</li>
+<li>Setup server-side routing to support cookies.</li>
+</ul>
+<p>Lets Code
+Create the Next app using the command</p>
+<pre><code class="language-sh">npx create-next-app@latest
+</code></pre>
+<p>Now you can start the app with command using</p>
+<pre><code class="language-sh">npm run dev
+</code></pre>
+<p>This command will start the dev server at <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+<p>Looking towards the folder structure, base app includes the following directories</p>
+<ul>
+<li>pages</li>
+<li>public</li>
+<li>styles</li>
+</ul>
+<p>Pages directory includes &#39;api&#39; folder in which you can create your REST API.</p>
+<p>Now you need to create the following directories in the root directory of the project, which includes,</p>
+<ul>
+<li>components</li>
+<li>store</li>
+<li>utils</li>
+</ul>
+<p>After creating all these directories we need to install Redux-Toolkit using this command,</p>
+<pre><code class="language-ts">npm install @reduxjs/toolkit
+</code></pre>
+<p>First of all we need to create a file named auth-slice.js in store/auth directory</p>
+<pre><code class="language-ts">import { createSlice } from &quot;@reduxjs/toolkit&quot;;
+
+export const authSlice = createSlice({
+  name: &quot;auth&quot;,
+  initialState = {
+       isLoggedIn: false,
+       user: {}
+   };
+  reducers: {
+    setUser: (state, { payload }) =&gt; {
+      state.user = payload.user;
+    },
+    deAuthenticate: (state) =&gt; {
+      state.isLoggedIn = false
+    },
+    authenticate: (state, { payload }) =&gt; {
+      state.isLoggedIn = true,
+      state.user = payload
+    },
+    restoreAuthState: (state, { payload }) =&gt; {
+      state.isLoggedIn = true
+      state.user = payload
+    }
+  },
+});
+
+export const { setUser } = authSlice.actions;
+
+export default authSlice.reducer;
+</code></pre>
+<p>Now we need to create a file called action-creators.js in auth directory,</p>
+<p>Now, we need to configure our store and create a file named store.js in store directory,</p>
+<pre><code class="language-ts">import auth from &quot;./auth/auth-slice&quot;;
+
+const store = configureStore({
+  reducer: auth,
+});
+
+export default store;
+</code></pre>
+<p>In _app.js file add the following code,</p>
+<pre><code class="language-ts">import &#39;../styles/globals.css&#39;
+import { Provider } from &quot;react-redux&quot;;
+import store from &quot;../store/store&quot;;
+
+export default function App({ Component, pageProps }) {
+  return (
+  &lt;Provider store={store} &gt;
+    &lt;Component {...pageProps} /&gt;
+  &lt;Provider /&gt;
+  )
+}
+</code></pre>
+
+
+</body>
+</html>
