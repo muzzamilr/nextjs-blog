@@ -164,6 +164,63 @@ export default function App({ Component, pageProps }) {
 `````
 We've also added a link to bootstrap's CDN as we'll be using it for this app's styling.
 
+### pages/index.js
+
+This is the "/" route of the Next.JS application. In this code we are using server side rendering to verify the JWT token and if the token is not verified then router pushes to the signin page.
+getServerSideProps is invoked before the rendering of component and returns the props which are further used by component.
+
+```ts
+import { getCookie } from "cookies-next";
+import jwt from "jsonwebtoken";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser } from "../store/auth/action-creators";
+import styles from "../styles/Home.module.css";
+
+export const getServerSideProps = async ({ req, res }) => {
+	const cookie = getCookie("token", { req, res });
+	if (!cookie) return { props: { isAuthenticated: false } };
+
+	try {
+		const isAuthenticated = await jwt.verify(
+			cookie,
+			process.env.NEXT_PUBLIC_JWT_KEY,
+		);
+		return { props: { isAuthenticated: isAuthenticated } };
+	} catch (err) {
+		return { props: { isAuthenticated: false } };
+	}
+};
+
+export default function Home({ isAuthenticated }) {
+	const dispatch = useDispatch();
+	const isLoggedIn = useSelector((state) => state.auth?.isLoggedIn);
+	const router = useRouter();
+
+	useEffect(() => {
+		// rome-ignore lint/complexity/useSimplifiedLogicExpression: <explanation>
+		if (!isAuthenticated || !isLoggedIn) {
+			dispatch(logoutUser());
+			router.push("/signin");
+		}
+	}, [isAuthenticated, isLoggedIn]);
+
+	return (
+		<div className={styles.container}>
+			<Head>
+				<title>Create Next App</title>
+			</Head>
+			<p>hello</p>
+
+			<button onClick={() => dispatch(logoutUser())}>Logout</button>
+		</div>
+	);
+}
+
+```
+
 ## Login Workflow
 
 For the login page we will create a file named signin.js in the pages directory.
@@ -304,5 +361,58 @@ export const Login = ({ login }) => {
     </main>
   );
 };
-
 ```
+
+## API Routes
+
+### api/auth.js
+
+In this file, we have created a request handler, which takes a user information as request body and jwt.sign method is used to generate a token. The token is generated everytime when user logs in to the app. If the request method is not appropriate then it will return unauthorised status.
+
+```ts
+import jwt from "jsonwebtoken";
+
+export default function handler(req, res) {
+	if (req.method === "POST") {
+		const user = {
+			username: req.body.username,
+			status: "got it",
+		};
+		const token = jwt.sign(
+			{
+				user: user,
+			},
+			process.env.NEXT_PUBLIC_JWT_KEY,
+			{ expiresIn: "12h" },
+		);
+
+		return res.json(token);
+	}
+
+	return res.status(401).json("Invalid Request");
+}
+```
+
+## Managing Next App
+After successfully completing all these steps you will need to create a .env file which consists of a env variable and assign it a key (you can use any random combination you want to use)
+```env
+NEXT_PUBLIC_JWT_KEY = <Your Key>
+```
+
+Now you can run the app in development server using command,
+```sh
+npm run dev
+```
+In order to run this app in production environment you can use the following commands,
+```sh
+npm run build
+```
+```sh
+npm run start
+```
+
+## Resources
+Resources for further exploration of Redux toolkit and JSON Web Tokens
+- [JWT Introduction](https://jwt.io/introduction)
+- [Redux Toolkit Documentation](https://redux-toolkit.js.org/introduction/getting-started)
+- [In-Depth Explanation of JWT](https://auth0.com/docs/secure/tokens/json-web-tokens)
